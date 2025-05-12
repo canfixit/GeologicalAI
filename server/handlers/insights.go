@@ -2,37 +2,142 @@ package handlers
 
 import (
 	"encoding/json"
-	"geosphere/models"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"time"
 )
 
-// Global variable to store insights
-var cachedInsights []models.AIInsight
+// InsightType represents the different types of AI insights
+type InsightType string
 
-// GetInsights handles requests for AI-generated insights
-func GetInsights(w http.ResponseWriter, r *http.Request) {
-	// Initialize insights if empty
-	if len(cachedInsights) == 0 {
-		cachedInsights = generateInsights()
-	}
+const (
+	Anomaly           InsightType = "anomaly"
+	PotentialResource InsightType = "potential_resource"
+	StructuralWeakness InsightType = "structural_weakness"
+	DensityVariation   InsightType = "density_variation"
+	FaultLine          InsightType = "fault_line"
+)
 
-	// Set content type header
-	w.Header().Set("Content-Type", "application/json")
+// Severity represents the severity level of an insight
+type Severity string
 
-	// Encode and return the data
-	json.NewEncoder(w).Encode(cachedInsights)
+const (
+	Low    Severity = "low"
+	Medium Severity = "medium"
+	High   Severity = "high"
+)
+
+// AIInsight represents an AI-generated insight about the terrain
+type AIInsight struct {
+	ID            string     `json:"id"`
+	Timestamp     string     `json:"timestamp"`
+	Type          InsightType `json:"type"`
+	Location      Position   `json:"location"`
+	LayerID       string     `json:"layerId,omitempty"`
+	Confidence    float64    `json:"confidence"`
+	Description   string     `json:"description"`
+	Recommendation string     `json:"recommendation,omitempty"`
+	Severity      Severity   `json:"severity"`
 }
 
-// RunAnalysis handles requests to run a new AI analysis
-func RunAnalysis(w http.ResponseWriter, r *http.Request) {
-	// Generate new insights
-	cachedInsights = generateInsights()
+// Mock insights data
+var mockInsights = []AIInsight{
+	{
+		ID:          "insight-1",
+		Timestamp:   time.Now().AddDate(0, 0, -5).Format(time.RFC3339),
+		Type:        PotentialResource,
+		Location: Position{
+			X: 300,
+			Y: 120,
+			Z: 250,
+		},
+		LayerID:     "layer-3",
+		Confidence:  0.85,
+		Description: "High porosity zone detected in sandstone layer with potential hydrocarbon signatures",
+		Recommendation: "Recommend detailed seismic survey to confirm potential oil reservoir",
+		Severity:    Medium,
+	},
+	{
+		ID:          "insight-2",
+		Timestamp:   time.Now().AddDate(0, 0, -3).Format(time.RFC3339),
+		Type:        StructuralWeakness,
+		Location: Position{
+			X: 520,
+			Y: 280,
+			Z: 180,
+		},
+		LayerID:     "layer-4",
+		Confidence:  0.92,
+		Description: "Fracture pattern detected in limestone layer with potential for cave formation",
+		Recommendation: "Monitor for subsidence risk and consider reinforcement in construction plans",
+		Severity:    High,
+	},
+	{
+		ID:          "insight-3",
+		Timestamp:   time.Now().AddDate(0, 0, -1).Format(time.RFC3339),
+		Type:        FaultLine,
+		Location: Position{
+			X: 700,
+			Y: 350,
+			Z: 450,
+		},
+		LayerID:     "layer-5",
+		Confidence:  0.78,
+		Description: "Discontinuity detected across multiple layers indicating potential fault line",
+		Recommendation: "Consider fault implications for building foundations and water drainage",
+		Severity:    Medium,
+	},
+	{
+		ID:          "insight-4",
+		Timestamp:   time.Now().Format(time.RFC3339),
+		Type:        DensityVariation,
+		Location: Position{
+			X: 420,
+			Y: 150,
+			Z: 320,
+		},
+		LayerID:     "layer-3",
+		Confidence:  0.65,
+		Description: "Unusual density variation detected in sandstone layer, potential mineral deposit",
+		Recommendation: "Sample for rare earth elements and assess economic viability",
+		Severity:    Low,
+	},
+	{
+		ID:          "insight-5",
+		Timestamp:   time.Now().Format(time.RFC3339),
+		Type:        Anomaly,
+		Location: Position{
+			X: 850,
+			Y: 400,
+			Z: 520,
+		},
+		LayerID:     "layer-6",
+		Confidence:  0.88,
+		Description: "Unexpected material composition detected in granite layer, potential intrusion",
+		Recommendation: "Further analysis recommended to identify geological history",
+		Severity:    Low,
+	},
+}
 
-	// Set content type header
+// GetInsights returns AI insights data
+func GetInsights(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	// Simulate loading time
+	time.Sleep(300 * time.Millisecond)
+	json.NewEncoder(w).Encode(mockInsights)
+}
 
+// RunAnalysis generates new insights
+func RunAnalysis(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	
+	// Simulate analysis running time
+	time.Sleep(1 * time.Second)
+	
+	// Generate new random insights
+	mockInsights = generateRandomInsights()
+	
 	// Return success response
 	json.NewEncoder(w).Encode(map[string]string{
 		"status":  "success",
@@ -40,86 +145,65 @@ func RunAnalysis(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// generateInsights creates simulated AI insights
-func generateInsights() []models.AIInsight {
-	insightTypes := []models.InsightType{
-		models.InsightTypeAnomaly,
-		models.InsightTypePotentialResource,
-		models.InsightTypeStructuralWeakness,
-		models.InsightTypeDensityVariation,
-		models.InsightTypeFaultLine,
-	}
-
-	severityLevels := []string{"low", "medium", "high"}
-	layerIDs := []string{"layer1", "layer2", "layer3", "layer4", "layer5", "layer6"}
-
-	// Generate between 5-10 random insights
-	numInsights := rand.Intn(6) + 5
-	insights := make([]models.AIInsight, numInsights)
-
+// generateRandomInsights creates a new set of random insights
+func generateRandomInsights() []AIInsight {
+	// Random seed
+	rand.Seed(time.Now().UnixNano())
+	
+	// Insight types and severities
+	insightTypes := []InsightType{Anomaly, PotentialResource, StructuralWeakness, DensityVariation, FaultLine}
+	severities := []Severity{Low, Medium, High}
+	layers := []string{"layer-1", "layer-2", "layer-3", "layer-4", "layer-5", "layer-6"}
+	
+	// Generate 3-7 random insights
+	numInsights := rand.Intn(5) + 3
+	insights := make([]AIInsight, numInsights)
+	
 	for i := 0; i < numInsights; i++ {
 		insightType := insightTypes[rand.Intn(len(insightTypes))]
-		severity := severityLevels[rand.Intn(len(severityLevels))]
-		layerID := layerIDs[rand.Intn(len(layerIDs))]
-		confidence := 0.5 + (rand.Float64() * 0.4) // Between 0.5 and 0.9
-
-		// Create position
-		x := (rand.Float64() * 20) - 10 // -10 to 10
-		y := -(rand.Float64() * 25)     // 0 to -25
-		z := (rand.Float64() * 20) - 10 // -10 to 10
-
-		// Description and recommendation based on insight type
+		severity := severities[rand.Intn(len(severities))]
+		layerID := layers[rand.Intn(len(layers))]
+		
+		// Generate random position within terrain bounds
+		pos := Position{
+			X: rand.Float64() * 1000,
+			Y: rand.Float64() * 500,
+			Z: rand.Float64() * 600,
+		}
+		
+		// Generate description and recommendation based on type
 		var description, recommendation string
-
 		switch insightType {
-		case models.InsightTypeAnomaly:
-			description = "Unexpected density pattern detected that doesn't match surrounding geological formations."
-			recommendation = "Consider additional scanning in this region to verify the anomaly."
-
-		case models.InsightTypePotentialResource:
-			description = "Mineral composition suggests potential natural resource deposits."
-			recommendation = "This area shows promising indicators for resource exploration."
-
-		case models.InsightTypeStructuralWeakness:
-			description = "Analysis indicates possible fracture or weakness in rock formation."
-			recommendation = "Conduct stability analysis before any excavation or construction."
-
-		case models.InsightTypeDensityVariation:
-			description = "Significant variation in density detected between adjacent formations."
-			recommendation = "Map the boundary regions more precisely to understand the transition zone."
-
-		case models.InsightTypeFaultLine:
-			description = "Pattern suggests a previously undetected fault line running through this region."
-			recommendation = "Further structural analysis recommended to determine fault characteristics."
+		case Anomaly:
+			description = "Unexpected material composition detected, potential anomaly"
+			recommendation = "Further analysis recommended to identify origin"
+		case PotentialResource:
+			description = "High porosity zone detected with potential resource signatures"
+			recommendation = "Recommend detailed survey to confirm resource potential"
+		case StructuralWeakness:
+			description = "Fracture pattern detected with potential for structural issues"
+			recommendation = "Monitor for instability and consider reinforcement"
+		case DensityVariation:
+			description = "Unusual density variation detected, potential mineral deposit"
+			recommendation = "Sample for mineral content and assess economic viability"
+		case FaultLine:
+			description = "Discontinuity detected across layers indicating potential fault line"
+			recommendation = "Consider fault implications for construction and stability"
 		}
-
+		
 		// Create insight
-		insights[i] = models.AIInsight{
-			ID:        generateInsightID(),
-			Timestamp: time.Now().Format(time.RFC3339),
-			Type:      insightType,
-			Location: models.Position{
-				X: x,
-				Y: y,
-				Z: z,
-			},
-			LayerID:        layerID,
-			Confidence:     confidence,
-			Description:    description,
+		insights[i] = AIInsight{
+			ID:            fmt.Sprintf("insight-%d", i+1),
+			Timestamp:     time.Now().Format(time.RFC3339),
+			Type:          insightType,
+			Location:      pos,
+			LayerID:       layerID,
+			Confidence:    0.5 + rand.Float64()*0.5, // 0.5-1.0
+			Description:   description,
 			Recommendation: recommendation,
-			Severity:       severity,
+			Severity:      severity,
 		}
 	}
-
+	
 	return insights
-}
-
-// generateInsightID creates a unique ID for insights
-func generateInsightID() string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	id := "ins_"
-	for i := 0; i < 8; i++ {
-		id += string(charset[rand.Intn(len(charset))])
-	}
-	return id
 }

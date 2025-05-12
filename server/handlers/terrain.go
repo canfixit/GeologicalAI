@@ -2,200 +2,233 @@ package handlers
 
 import (
 	"encoding/json"
-	"geosphere/models"
-	"math/rand"
 	"net/http"
 	"time"
 )
 
-// Initialize random seed
-func init() {
-	rand.Seed(time.Now().UnixNano())
+// TerrainData represents a geological terrain model
+type TerrainData struct {
+	ID         string      `json:"id"`
+	Name       string      `json:"name"`
+	Dimensions Dimensions  `json:"dimensions"`
+	Layers     []Layer     `json:"layers"`
+	DrillPoints []DrillPoint `json:"drillPoints"`
 }
 
-// GetTerrainData handles requests for terrain data
-func GetTerrainData(w http.ResponseWriter, r *http.Request) {
-	// Create simulated terrain data
-	terrainData := generateMockTerrainData()
-
-	// Set content type header
-	w.Header().Set("Content-Type", "application/json")
-
-	// Encode and return the data
-	json.NewEncoder(w).Encode(terrainData)
+// Dimensions represents the size of the terrain
+type Dimensions struct {
+	Width  float64 `json:"width"`
+	Height float64 `json:"height"`
+	Depth  float64 `json:"depth"`
 }
 
-// generateMockTerrainData creates sample geological terrain data
-func generateMockTerrainData() models.TerrainData {
-	// Define dimensions of the terrain
-	dimensions := models.Dimensions{
-		Width:  20,
-		Height: 10,
-		Depth:  20,
-	}
+// Layer represents a geological layer
+type Layer struct {
+	ID        string      `json:"id"`
+	Name      string      `json:"name"`
+	Depth     float64     `json:"depth"`
+	Thickness float64     `json:"thickness"`
+	Color     string      `json:"color"`
+	Material  string      `json:"material"`
+	Opacity   float64     `json:"opacity"`
+	Metadata  LayerMetadata `json:"metadata"`
+	Visible   bool        `json:"visible"`
+}
 
-	// Create mock layers
-	layers := []models.TerrainLayer{
+// LayerMetadata contains detailed information about a layer
+type LayerMetadata struct {
+	Age          string  `json:"age"`
+	Composition  string  `json:"composition"`
+	Porosity     float64 `json:"porosity"`
+	Permeability float64 `json:"permeability"`
+	Density      float64 `json:"density"`
+}
+
+// DrillPoint represents a point where drilling data was collected
+type DrillPoint struct {
+	ID       string            `json:"id"`
+	Name     string            `json:"name"`
+	Position Position          `json:"position"`
+	Metadata DrillPointMetadata `json:"metadata"`
+}
+
+// Position represents 3D coordinates
+type Position struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+	Z float64 `json:"z"`
+}
+
+// DrillPointMetadata contains detailed information about a drill point
+type DrillPointMetadata struct {
+	Date       string  `json:"date"`
+	Depth      float64 `json:"depth"`
+	SampleData string  `json:"sampleData"`
+}
+
+// Mock terrain data
+var mockTerrainData = TerrainData{
+	ID:   "terrain-1",
+	Name: "Mountain Range Cross-Section",
+	Dimensions: Dimensions{
+		Width:  1000,
+		Height: 500,
+		Depth:  600,
+	},
+	Layers: []Layer{
 		{
-			ID:        "layer1",
+			ID:        "layer-1",
 			Name:      "Topsoil",
 			Depth:     0,
-			Thickness: 1.5,
+			Thickness: 20,
 			Color:     "#8B4513",
 			Material:  "soil",
 			Opacity:   0.9,
-			Metadata: models.LayerMetadata{
+			Metadata: LayerMetadata{
 				Age:          "Recent",
-				Composition:  "Silty loam",
-				Porosity:     35,
-				Permeability: 150,
-				Density:      1.3,
+				Composition:  "Organic matter, clay, silt",
+				Porosity:     0.5,
+				Permeability: 0.4,
+				Density:      1.2,
 			},
 			Visible: true,
 		},
 		{
-			ID:        "layer2",
-			Name:      "Sandy Clay",
-			Depth:     1.5,
-			Thickness: 3.0,
-			Color:     "#D2B48C",
+			ID:        "layer-2",
+			Name:      "Clay",
+			Depth:     20,
+			Thickness: 50,
+			Color:     "#A0522D",
 			Material:  "clay",
-			Opacity:   0.9,
-			Metadata: models.LayerMetadata{
+			Opacity:   0.85,
+			Metadata: LayerMetadata{
 				Age:          "Holocene",
-				Composition:  "Sandy clay",
-				Porosity:     28,
-				Permeability: 50,
-				Density:      1.8,
+				Composition:  "Clay minerals, quartz",
+				Porosity:     0.4,
+				Permeability: 0.1,
+				Density:      1.5,
 			},
 			Visible: true,
 		},
 		{
-			ID:        "layer3",
+			ID:        "layer-3",
 			Name:      "Sandstone",
-			Depth:     4.5,
-			Thickness: 4.0,
-			Color:     "#F4A460",
-			Material:  "sand",
-			Opacity:   0.9,
-			Metadata: models.LayerMetadata{
-				Age:          "Pleistocene",
-				Composition:  "Quartz sandstone",
-				Porosity:     22,
-				Permeability: 120,
-				Density:      2.2,
+			Depth:     70,
+			Thickness: 150,
+			Color:     "#DEB887",
+			Material:  "sandstone",
+			Opacity:   0.8,
+			Metadata: LayerMetadata{
+				Age:          "Cretaceous",
+				Composition:  "Quartz, feldspar",
+				Porosity:     0.3,
+				Permeability: 0.6,
+				Density:      2.3,
 			},
 			Visible: true,
 		},
 		{
-			ID:        "layer4",
+			ID:        "layer-4",
 			Name:      "Limestone",
-			Depth:     8.5,
-			Thickness: 5.0,
-			Color:     "#D3D3D3",
-			Material:  "rock",
-			Opacity:   0.9,
-			Metadata: models.LayerMetadata{
-				Age:          "Cretaceous",
-				Composition:  "Calcite-rich limestone",
-				Porosity:     15,
-				Permeability: 35,
+			Depth:     220,
+			Thickness: 180,
+			Color:     "#F5F5DC",
+			Material:  "limestone",
+			Opacity:   0.75,
+			Metadata: LayerMetadata{
+				Age:          "Jurassic",
+				Composition:  "Calcium carbonate",
+				Porosity:     0.2,
+				Permeability: 0.3,
 				Density:      2.7,
 			},
 			Visible: true,
 		},
 		{
-			ID:        "layer5",
+			ID:        "layer-5",
 			Name:      "Shale",
-			Depth:     13.5,
-			Thickness: 6.5,
-			Color:     "#696969",
-			Material:  "rock",
-			Opacity:   0.9,
-			Metadata: models.LayerMetadata{
-				Age:          "Jurassic",
-				Composition:  "Clay-rich shale",
-				Porosity:     8,
-				Permeability: 10,
+			Depth:     400,
+			Thickness: 100,
+			Color:     "#2F4F4F",
+			Material:  "shale",
+			Opacity:   0.7,
+			Metadata: LayerMetadata{
+				Age:          "Triassic",
+				Composition:  "Clay minerals, quartz, organic matter",
+				Porosity:     0.1,
+				Permeability: 0.05,
 				Density:      2.4,
 			},
 			Visible: true,
 		},
 		{
-			ID:        "layer6",
-			Name:      "Granite Bedrock",
-			Depth:     20.0,
-			Thickness: 10.0,
-			Color:     "#A9A9A9",
-			Material:  "rock",
+			ID:        "layer-6",
+			Name:      "Granite",
+			Depth:     500,
+			Thickness: 100,
+			Color:     "#B0B0B0",
+			Material:  "granite",
 			Opacity:   0.9,
-			Metadata: models.LayerMetadata{
+			Metadata: LayerMetadata{
 				Age:          "Precambrian",
-				Composition:  "Granite",
-				Porosity:     3,
-				Permeability: 1,
+				Composition:  "Quartz, feldspar, mica",
+				Porosity:     0.01,
+				Permeability: 0.001,
 				Density:      2.8,
 			},
 			Visible: true,
 		},
-	}
+	},
+	DrillPoints: []DrillPoint{
+		{
+			ID:   "drill-1",
+			Name: "Drill Site Alpha",
+			Position: Position{
+				X: 200,
+				Y: 0,
+				Z: 100,
+			},
+			Metadata: DrillPointMetadata{
+				Date:       "2024-02-15",
+				Depth:      450,
+				SampleData: "Sandstone with oil traces at 320m depth",
+			},
+		},
+		{
+			ID:   "drill-2",
+			Name: "Drill Site Beta",
+			Position: Position{
+				X: 600,
+				Y: 0,
+				Z: 300,
+			},
+			Metadata: DrillPointMetadata{
+				Date:       "2024-03-22",
+				Depth:      520,
+				SampleData: "Limestone with karst features at 250m depth",
+			},
+		},
+		{
+			ID:   "drill-3",
+			Name: "Drill Site Gamma",
+			Position: Position{
+				X: 800,
+				Y: 0,
+				Z: 450,
+			},
+			Metadata: DrillPointMetadata{
+				Date:       "2024-04-10",
+				Depth:      580,
+				SampleData: "Granite with mineral veins at 550m depth",
+			},
+		},
+	},
+}
 
-	// Generate drill points
-	drillPoints := []models.DrillPoint{
-		{
-			ID:   "dp1",
-			Name: "Drill Point A",
-			Position: models.Position{
-				X: -5,
-				Y: 0,
-				Z: -3,
-			},
-			Metadata: models.DrillPointMetadata{
-				Date:       "2023-04-15",
-				Depth:      18.5,
-				SampleData: "Core sample with traces of minerals",
-			},
-		},
-		{
-			ID:   "dp2",
-			Name: "Drill Point B",
-			Position: models.Position{
-				X: 4,
-				Y: 0,
-				Z: 6,
-			},
-			Metadata: models.DrillPointMetadata{
-				Date:       "2023-06-22",
-				Depth:      12.0,
-				SampleData: "Sedimentary layers with fossil inclusions",
-			},
-		},
-		{
-			ID:   "dp3",
-			Name: "Drill Point C",
-			Position: models.Position{
-				X: -2,
-				Y: 0,
-				Z: 5,
-			},
-			Metadata: models.DrillPointMetadata{
-				Date:       "2023-08-10",
-				Depth:      25.0,
-				SampleData: "Igneous intrusion detected",
-			},
-		},
-	}
-
-	// Return complete terrain data
-	return models.TerrainData{
-		ID:   "terrain1",
-		Name: "Example Terrain Site",
-		Dimensions: models.Dimensions{
-			Width:  dimensions.Width,
-			Height: dimensions.Height,
-			Depth:  dimensions.Depth,
-		},
-		Layers:      layers,
-		DrillPoints: drillPoints,
-	}
+// GetTerrainData returns terrain data
+func GetTerrainData(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	// Simulate loading time
+	time.Sleep(500 * time.Millisecond)
+	json.NewEncoder(w).Encode(mockTerrainData)
 }
