@@ -310,10 +310,18 @@ function generateRandomInsights() {
 // Function to check if Go server is running
 async function isGoServerRunning() {
   try {
-    const response = await fetch("http://localhost:8080/api/test", { timeout: 500 });
+    // Using AbortController to implement timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 500);
+    
+    const response = await fetch("http://localhost:8080/api/test", { 
+      signal: controller.signal 
+    });
+    
+    clearTimeout(timeoutId);
     return response.ok;
-  } catch (error) {
-    console.log("Go server check failed:", error.message);
+  } catch (error: any) {
+    console.log("Go server check failed:", error.message || "Unknown error");
     return false;
   }
 }
