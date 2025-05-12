@@ -1,0 +1,207 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 216 33% 97%;
+    --foreground: 222 47% 11%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 215 25% 27%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 214 32% 90%;
+    --sidebar-ring: 222 24% 34%;
+    
+    --primary: 222 47% 11%;
+    --primary-foreground: 210 40% 98%;
+    
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222 47% 11%;
+    
+    --muted: 210 40% 93%;
+    --muted-foreground: 215 16% 47%;
+    
+    --accent: 217 91% 60%;
+    --accent-foreground: 210 40% 98%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 214 32% 91.5%;
+    --input: 214 32% 91.5%;
+    --ring: 222 84% 57%;
+    
+    --chart-1: 217 91% 60%;
+    --chart-2: 159 66% 49%;
+    --chart-3: 29 80% 57%;
+    --chart-4: 326 80% 60%;
+    --chart-5: 265 84% 70%;
+
+    --radius: 0.5rem;
+  }
+  
+  .dark {
+    --background: 224 40% 12%;
+    --foreground: 210 40% 98%;
+    
+    --card: 224 40% 16%;
+    --card-foreground: 210 40% 98%;
+    
+    --popover: 224 40% 16%;
+    --popover-foreground: 210 40% 98%;
+    
+    --sidebar-background: 224 71% 4%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 215 25% 27%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 216 34% 17%;
+    --sidebar-ring: 224 71% 4%;
+    
+    --primary: 210 40% 98%;
+    --primary-foreground: 222 47% 11%;
+    
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 210 40% 98%;
+    
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+    
+    --accent: 217 91% 60%;
+    --accent-foreground: 210 40% 98%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 224 64% 33%;
+
+    --chart-1: 217 91% 60%;
+    --chart-2: 157 85% 59%;
+    --chart-3: 29 85% 57%;
+    --chart-4: 326 85% 65%;
+    --chart-5: 265 90% 70%;
+  }
+  
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+  }
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+}
+
+canvas {
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
+}
+
+.canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.content-overlay {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.content-overlay > * {
+  pointer-events: auto;
+}
+
+.gradient-text {
+  @apply text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-500;
+}
+
+.layer-info-card {
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .layer-info-card {
+  background-color: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.text-outline {
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.5),
+               0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.drill-annotation {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.insights-panel {
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.insights-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.insights-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.insights-panel::-webkit-scrollbar-thumb {
+  @apply bg-muted rounded-full;
+}
+
+.dark .insights-panel::-webkit-scrollbar-thumb {
+  @apply bg-muted rounded-full;
+}
+
+.hero-overlay {
+  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 100%);
+}
+
+.loading-spinner {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
