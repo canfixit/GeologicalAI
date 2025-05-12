@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "The name of the project, used for resource naming"
   type        = string
-  default     = "reacttreegoai"
+  default     = "reactthreegoai"
 }
 
 variable "ec2_ami" {
@@ -30,5 +30,5 @@ variable "ec2_key_name" {
 variable "git_repo_url" {
   description = "The URL of the Git repository to clone"
   type        = string
-  default     = "https://github.com/yourusername/reacttreegoai.git"
+  default     = "https://github.com/yourusername/reactthreegoai.git"
 }

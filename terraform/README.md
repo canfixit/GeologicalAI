@@ -1,6 +1,6 @@
-# Terraform Configuration for ReactTreeGoAI Project
+# Terraform Configuration for ReactThreeGoAI Project
 
-This directory contains Terraform configurations to deploy the ReactTreeGoAI application to AWS EC2.
+This directory contains Terraform configurations to deploy the ReactThreeGoAI application to AWS EC2.
 
 ## Prerequisites
 
@@ -21,11 +21,11 @@ cp terraform.tfvars.example terraform.tfvars
 
 ```
 aws_region       = "us-east-1"              # AWS region for deployment
-project_name     = "reacttreegoai"          # Name used for resource naming
+project_name     = "reactthreegoai"         # Name used for resource naming
 ec2_ami          = "ami-0c7217cdde317cfec"  # Ubuntu 22.04 LTS AMI (us-east-1)
 ec2_instance_type = "t2.medium"             # Instance type
 ec2_key_name     = "your-key-name"          # Replace with your EC2 key pair name
-git_repo_url     = "https://github.com/yourusername/reacttreegoai.git"  # Replace with your repo URL
+git_repo_url     = "https://github.com/yourusername/reactthreegoai.git"  # Replace with your repo URL
 ```
 
 ## State Management (Optional)
