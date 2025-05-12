@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useTerrainStore } from "@/lib/stores/useTerrainStore";
 import { useUIStore } from "@/lib/stores/useUIStore";
+import { useVisualizationStore } from "@/lib/stores/useVisualizationStore";
 import { ViewMode } from "@/types/terrain";
 
 // Define the available view modes
@@ -37,14 +38,10 @@ const VIEW_MODES: ViewMode[] = [
 
 export default function InteractiveControls() {
   const [expanded, setExpanded] = useState(false);
-  const [showControls, setShowControls] = useState(true);
+  const [showControlPanel, setShowControlPanel] = useState(true);
   const [currentTab, setCurrentTab] = useState("layers");
-  const [lightIntensity, setLightIntensity] = useState(1);
-  const [ambientIntensity, setAmbientIntensity] = useState(0.5);
-  const [showLabels, setShowLabels] = useState(true);
-  const [showAxes, setShowAxes] = useState(false);
-  const [exaggeration, setExaggeration] = useState(1);
 
+  // Get terrain data and actions from terrain store
   const { 
     terrainData, 
     toggleLayerVisibility, 
@@ -52,21 +49,38 @@ export default function InteractiveControls() {
     setViewMode, 
     resetView,
     selectedLayerId,
-    selectLayer,
-    cameraPosition,
-    setCameraPosition
+    selectLayer
   } = useTerrainStore();
+  
+  // Get visualization settings and actions from visualization store
+  const {
+    lightIntensity,
+    ambientIntensity,
+    verticalExaggeration,
+    showLabels,
+    showAxes,
+    wireframeMode,
+    
+    // Get setter actions
+    setLightIntensity,
+    setAmbientIntensity,
+    setVerticalExaggeration,
+    setShowLabels,
+    setShowAxes,
+    setWireframeMode,
+    resetVisualization
+  } = useVisualizationStore();
   
   // Hide controls when user hasn't interacted for a while
   useEffect(() => {
     if (!expanded) return;
     
     const timer = setTimeout(() => {
-      setShowControls(false);
+      setShowControlPanel(false);
     }, 8000);
     
     const handleActivity = () => {
-      setShowControls(true);
+      setShowControlPanel(true);
       clearTimeout(timer);
     };
     
@@ -82,6 +96,7 @@ export default function InteractiveControls() {
     };
   }, [expanded]);
   
+  // Handle view mode change
   const handleViewModeChange = (mode: string) => {
     const selectedMode = VIEW_MODES.find(m => m.type === mode);
     if (selectedMode) {
@@ -89,19 +104,23 @@ export default function InteractiveControls() {
     }
   };
 
+  // Handlers that update the visualization store
   const handleExaggerationChange = (value: number[]) => {
-    setExaggeration(value[0]);
-    // We would adjust the height scale of terrain visualization here
+    setVerticalExaggeration(value[0]);
   };
 
   const handleLightIntensityChange = (value: number[]) => {
     setLightIntensity(value[0]);
-    // We would adjust the light in the scene here
   };
 
   const handleAmbientIntensityChange = (value: number[]) => {
     setAmbientIntensity(value[0]);
-    // We would adjust the ambient light in the scene here
+  };
+  
+  // Reset both view and visualization settings
+  const handleResetAll = () => {
+    resetView();
+    resetVisualization();
   };
 
   if (!terrainData) return null;

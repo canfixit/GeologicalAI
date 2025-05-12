@@ -14,9 +14,11 @@ import {
 import * as THREE from 'three';
 import { useTerrainStore } from '@/lib/stores/useTerrainStore';
 import { useUIStore } from '@/lib/stores/useUIStore';
+import { useVisualizationStore } from '@/lib/stores/useVisualizationStore';
 import { apiRequest } from '@/lib/queryClient';
 import TerrainLayer from './TerrainLayer';
 import TerrainLayerInfo from './TerrainLayerInfo';
+import InteractiveControls from './InteractiveControls';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { DrillPoint } from '@/types/terrain';
@@ -33,14 +35,16 @@ function TerrainScene() {
     setLoadingInsights 
   } = useTerrainStore();
   
-  // State for interactive visualization settings
-  const [showAxes, setShowAxes] = useState(false);
-  const [showLabels, setShowLabels] = useState(true);
-  const [lightIntensity, setLightIntensity] = useState(1.5);
-  const [ambientIntensity, setAmbientIntensity] = useState(0.5);
-  const [verticalExaggeration, setVerticalExaggeration] = useState(1);
-  const [wireframeMode, setWireframeMode] = useState(false);
-  const [colorByProperty, setColorByProperty] = useState<string | undefined>(undefined);
+  // Use visualization store for interactive controls
+  const {
+    showAxes,
+    showLabels,
+    lightIntensity,
+    ambientIntensity,
+    verticalExaggeration,
+    wireframeMode,
+    colorByProperty
+  } = useVisualizationStore();
   
   // Refs for lights to control them dynamically
   const directionalLightRef = useRef<THREE.DirectionalLight>(null);
@@ -98,30 +102,35 @@ function TerrainScene() {
   
   if (!terrainData) return null;
   
-  // Get visualization properties based on the current view mode
+  // Get visualization properties based on the current view mode and store settings
   const getVisualizationProps = () => {
+    // Convert possibly null colorByProperty to undefined for component props
+    const colorProperty = colorByProperty || undefined;
+    
     switch (viewMode.type) {
       case 'xray':
         return {
           wireframe: true,
           opacity: 0.6,
-          colorByProperty: colorByProperty
+          colorByProperty: colorProperty
         };
       case 'composition':
         return {
           materialScale: 1.5,
           colorEmphasis: true,
-          colorByProperty: colorByProperty || 'composition'
+          colorByProperty: colorProperty || 'composition',
+          wireframe: wireframeMode
         };
       case 'density':
         return {
           heightScale: 1.2,
-          colorByProperty: colorByProperty || 'density'
+          colorByProperty: colorProperty || 'density',
+          wireframe: wireframeMode
         };
       default:
         return {
           wireframe: wireframeMode,
-          colorByProperty: colorByProperty
+          colorByProperty: colorProperty
         };
     }
   };
@@ -307,6 +316,9 @@ export default function TerrainViewer() {
         </Suspense>
         <Stats className="hidden md:block" />
       </Canvas>
+      
+      {/* Interactive Controls Panel */}
+      <InteractiveControls />
     </div>
   );
 }
