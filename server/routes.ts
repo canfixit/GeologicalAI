@@ -231,7 +231,8 @@ function generateRandomInsights() {
     const z = (Math.random() * 20) - 10; // -10 to 10
     
     // Description and recommendation based on insight type
-    let description, recommendation;
+    let description = "";
+    let recommendation = "";
     
     switch (insightType) {
       case "anomaly":
@@ -254,6 +255,9 @@ function generateRandomInsights() {
         description = "Pattern suggests a previously undetected fault line running through this region.";
         recommendation = "Further structural analysis recommended to determine fault characteristics.";
         break;
+      default:
+        description = "Geological formation of interest detected in this region.";
+        recommendation = "Further investigation recommended.";
     }
     
     // Create insight

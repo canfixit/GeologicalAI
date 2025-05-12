@@ -43,73 +43,91 @@ export default function TerrainLayer({
     return [0, -totalThickness, 0];
   }, [layer.depth, layer.thickness]);
   
-  // Create material based on view mode
-  const material = useMemo(() => {
+  // Get material properties based on view mode
+  const getMaterialProps = () => {
     // Base color from layer
     const color = new THREE.Color(layer.color);
+    const emissive = isSelected ? new THREE.Color(layer.color).multiplyScalar(0.2) : undefined;
     
     // Modify appearance based on view mode
     switch (viewMode.type) {
       case 'xray':
-        return new THREE.MeshStandardMaterial({
-          color,
+        return {
+          color: color,
           transparent: true,
           opacity: 0.6,
           wireframe: true,
-        });
-        
-      case 'composition':
-        // In composition mode, use color based on layer material
-        const materialColors = {
-          'rock': new THREE.Color('#8B4513'),
-          'sand': new THREE.Color('#F4A460'),
-          'soil': new THREE.Color('#556B2F'),
-          'clay': new THREE.Color('#CD853F'),
-          'default': color,
+          emissive: emissive,
+          emissiveMap: isSelected ? texture : undefined
         };
-        return new THREE.MeshStandardMaterial({
-          color: materialColors[layer.material] || materialColors['default'],
+        
+      case 'composition': {
+        // In composition mode, use color based on layer material
+        let materialColor;
+        
+        if (layer.material === 'rock') {
+          materialColor = new THREE.Color('#8B4513');
+        } else if (layer.material === 'sand') {
+          materialColor = new THREE.Color('#F4A460');
+        } else if (layer.material === 'soil') {
+          materialColor = new THREE.Color('#556B2F');
+        } else if (layer.material === 'clay') {
+          materialColor = new THREE.Color('#CD853F');
+        } else {
+          materialColor = color;
+        }
+        
+        return {
+          color: materialColor,
           transparent: true,
           opacity: 0.8,
           roughness: 0.7,
           metalness: 0.1,
           map: texture,
-        });
+          emissive: emissive,
+          emissiveMap: isSelected ? texture : undefined
+        };
+      }
         
-      case 'density':
+      case 'density': {
         // In density mode, use color based on layer density
-        const densityColor = new THREE.Color(
-          layer.metadata.density < 2 ? '#4682B4' :
-          layer.metadata.density < 3 ? '#6A5ACD' :
-          layer.metadata.density < 4 ? '#9370DB' : 
-          '#8A2BE2'
-        );
-        return new THREE.MeshStandardMaterial({
+        let densityColor;
+        if (layer.metadata.density < 2) {
+          densityColor = new THREE.Color('#4682B4');
+        } else if (layer.metadata.density < 3) {
+          densityColor = new THREE.Color('#6A5ACD');
+        } else if (layer.metadata.density < 4) {
+          densityColor = new THREE.Color('#9370DB');
+        } else {
+          densityColor = new THREE.Color('#8A2BE2');
+        }
+        
+        return {
           color: densityColor,
           transparent: true,
           opacity: 0.7,
           roughness: 0.5,
           metalness: 0.3,
-        });
+          emissive: emissive,
+          emissiveMap: isSelected ? texture : undefined
+        };
+      }
         
       default:
-        // Default view with texture
-        return new THREE.MeshStandardMaterial({
-          color,
+        return {
+          color: color,
           transparent: true,
           opacity: layer.opacity,
           roughness: 0.6,
           metalness: 0.1,
           map: texture,
-        });
+          emissive: emissive,
+          emissiveMap: isSelected ? texture : undefined
+        };
     }
-  }, [layer, texture, viewMode]);
+  };
   
-  // Apply special effects for selected layer
-  if (isSelected) {
-    material.emissive = new THREE.Color(layer.color).multiplyScalar(0.2);
-    material.emissiveMap = texture;
-  }
+  const materialProps = getMaterialProps();
   
   return (
     <mesh 
@@ -122,7 +140,7 @@ export default function TerrainLayer({
       castShadow
     >
       <boxGeometry args={[dimensions.width, layer.thickness, dimensions.depth]} />
-      {material}
+      <meshStandardMaterial {...materialProps} />
     </mesh>
   );
 }
