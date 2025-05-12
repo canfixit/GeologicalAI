@@ -285,8 +285,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Terrain data endpoint
   app.get("/api/terrain", (req, res) => {
     try {
-      // Return mock terrain data
-      res.json(mockTerrainData);
+      // Forward request to Go backend
+      fetch("http://localhost:8080/api/terrain")
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to fetch terrain data from backend');
+          }
+          return response.json();
+        })
+        .then(data => {
+          res.json(data);
+        })
+        .catch(error => {
+          console.error("Error fetching terrain data:", error);
+          // Fallback to mock data if Go backend is not available
+          console.log("Falling back to mock terrain data");
+          res.json(mockTerrainData);
+        });
     } catch (error) {
       console.error("Error in terrain endpoint:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -296,8 +311,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Insights endpoint
   app.get("/api/insights", (req, res) => {
     try {
-      // Return mock insights
-      res.json(mockInsights);
+      // Forward request to Go backend
+      fetch("http://localhost:8080/api/insights")
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to fetch insights from backend');
+          }
+          return response.json();
+        })
+        .then(data => {
+          res.json(data);
+        })
+        .catch(error => {
+          console.error("Error fetching insights:", error);
+          // Fallback to mock data if Go backend is not available
+          console.log("Falling back to mock insights data");
+          res.json(mockInsights);
+        });
     } catch (error) {
       console.error("Error in insights endpoint:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -307,14 +337,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Run new analysis endpoint
   app.post("/api/insights/analyze", (req, res) => {
     try {
-      // Generate new mock insights
-      mockInsights = generateRandomInsights();
-      
-      // Return success response
-      res.json({
-        status: "success",
-        message: "Analysis completed successfully",
-      });
+      // Forward request to Go backend
+      fetch("http://localhost:8080/api/insights/analyze", {
+        method: "POST"
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to run new analysis');
+          }
+          return response.json();
+        })
+        .then(data => {
+          res.json(data);
+        })
+        .catch(error => {
+          console.error("Error running new analysis:", error);
+          // Fallback to generating mock insights if Go backend is not available
+          console.log("Falling back to generating mock insights");
+          mockInsights = generateRandomInsights();
+          res.json({
+            status: "success",
+            message: "Analysis completed successfully (mock data)",
+          });
+        });
     } catch (error) {
       console.error("Error in analyze endpoint:", error);
       res.status(500).json({ message: "Internal server error" });
