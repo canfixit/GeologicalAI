@@ -33,6 +33,19 @@ function TerrainScene() {
     setLoadingInsights 
   } = useTerrainStore();
   
+  // State for interactive visualization settings
+  const [showAxes, setShowAxes] = useState(false);
+  const [showLabels, setShowLabels] = useState(true);
+  const [lightIntensity, setLightIntensity] = useState(1.5);
+  const [ambientIntensity, setAmbientIntensity] = useState(0.5);
+  const [verticalExaggeration, setVerticalExaggeration] = useState(1);
+  const [wireframeMode, setWireframeMode] = useState(false);
+  const [colorByProperty, setColorByProperty] = useState<string | undefined>(undefined);
+  
+  // Refs for lights to control them dynamically
+  const directionalLightRef = useRef<THREE.DirectionalLight>(null);
+  const ambientLightRef = useRef<THREE.AmbientLight>(null);
+  
   const { camera } = useThree();
   const controlsRef = useRef<any>(null);
   
@@ -45,6 +58,16 @@ function TerrainScene() {
       controlsRef.current.target.set(cameraTarget.x, cameraTarget.y, cameraTarget.z);
     }
   }, [cameraPosition, cameraTarget, camera]);
+  
+  // Update light properties when intensity changes
+  useEffect(() => {
+    if (directionalLightRef.current) {
+      directionalLightRef.current.intensity = lightIntensity;
+    }
+    if (ambientLightRef.current) {
+      ambientLightRef.current.intensity = ambientIntensity;
+    }
+  }, [lightIntensity, ambientIntensity]);
   
   // Fetch AI insights periodically
   useEffect(() => {
@@ -75,13 +98,44 @@ function TerrainScene() {
   
   if (!terrainData) return null;
   
+  // Get visualization properties based on the current view mode
+  const getVisualizationProps = () => {
+    switch (viewMode.type) {
+      case 'xray':
+        return {
+          wireframe: true,
+          opacity: 0.6,
+          colorByProperty: colorByProperty
+        };
+      case 'composition':
+        return {
+          materialScale: 1.5,
+          colorEmphasis: true,
+          colorByProperty: colorByProperty || 'composition'
+        };
+      case 'density':
+        return {
+          heightScale: 1.2,
+          colorByProperty: colorByProperty || 'density'
+        };
+      default:
+        return {
+          wireframe: wireframeMode,
+          colorByProperty: colorByProperty
+        };
+    }
+  };
+  
+  const visualizationProps = getVisualizationProps();
+  
   return (
     <>
       {/* Lights */}
-      <ambientLight intensity={0.5} />
+      <ambientLight ref={ambientLightRef} intensity={ambientIntensity} />
       <directionalLight 
+        ref={directionalLightRef}
         position={[10, 10, 5]} 
-        intensity={1.5} 
+        intensity={lightIntensity} 
         castShadow 
         shadow-mapSize-width={2048} 
         shadow-mapSize-height={2048} 
@@ -103,9 +157,29 @@ function TerrainScene() {
       {/* Environment */}
       <Environment preset="sunset" />
       
+      {/* Show Axes if enabled */}
+      {showAxes && (
+        <>
+          <Grid 
+            args={[terrainData.dimensions.width * 2, terrainData.dimensions.depth * 2]} 
+            position={[0, 0.05, 0]} 
+            cellSize={20}
+            cellThickness={0.5}
+            cellColor="#6f6f6f"
+            sectionSize={100}
+            sectionThickness={1}
+            sectionColor="#9d4b4b"
+            fadeDistance={1000}
+          />
+          <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
+            <GizmoViewport axisColors={['red', 'green', 'blue']} labelColor="white" />
+          </GizmoHelper>
+        </>
+      )}
+      
       {/* Terrain Group */}
       <group position={[0, 0, 0]}>
-        {/* Grid Helper */}
+        {/* Grid Helper - always shown */}
         <gridHelper 
           args={[
             terrainData.dimensions.width, 
@@ -116,29 +190,36 @@ function TerrainScene() {
           position={[0, 0.05, 0]}
         />
         
-        {/* Terrain Layers */}
-        {terrainData.layers.map((layer, index) => (
-          layer.visible && (
-            <TerrainLayer 
-              key={layer.id}
-              layer={layer}
-              index={index}
-              isSelected={layer.id === selectedLayerId}
-              onClick={() => selectLayer(layer.id === selectedLayerId ? null : layer.id)}
-              dimensions={terrainData.dimensions}
-              viewMode={viewMode}
-            />
-          )
-        ))}
+        {/* Terrain Layers with vertical exaggeration */}
+        <group scale={[1, verticalExaggeration, 1]}>
+          {terrainData.layers.map((layer, index) => (
+            layer.visible && (
+              <TerrainLayer 
+                key={layer.id}
+                layer={layer}
+                index={index}
+                isSelected={layer.id === selectedLayerId}
+                onClick={() => selectLayer(layer.id === selectedLayerId ? null : layer.id)}
+                dimensions={terrainData.dimensions}
+                viewMode={viewMode}
+                {...visualizationProps}
+              />
+            )
+          ))}
+        </group>
         
         {/* Drill Points */}
         {terrainData.drillPoints.map((point) => (
-          <DrillPointMarker key={point.id} point={point} />
+          <DrillPointMarker 
+            key={point.id} 
+            point={point} 
+            visible={showLabels} 
+          />
         ))}
       </group>
       
       {/* Selected Layer Info */}
-      {selectedLayerId && (
+      {selectedLayerId && showLabels && (
         <TerrainLayerInfo 
           layer={terrainData.layers.find(l => l.id === selectedLayerId)!}
         />
@@ -148,8 +229,10 @@ function TerrainScene() {
 }
 
 // Drill Point Component
-function DrillPointMarker({ point }: { point: DrillPoint }) {
+function DrillPointMarker({ point, visible = true }: { point: DrillPoint; visible?: boolean }) {
   const { x, y, z } = point.position;
+  
+  if (!visible) return null;
   
   return (
     <group position={[x, y, z]}>
@@ -187,7 +270,21 @@ export default function TerrainViewer() {
   
   useEffect(() => {
     if (data) {
-      setTerrainData(data);
+      // Type check before setting terrain data
+      if (
+        typeof data === 'object' && 
+        data !== null && 
+        'id' in data && 
+        'name' in data && 
+        'dimensions' in data && 
+        'layers' in data &&
+        'drillPoints' in data
+      ) {
+        setTerrainData(data);
+      } else {
+        console.error('Invalid terrain data format received:', data);
+        setError('Invalid terrain data format received');
+      }
     }
     
     setLoading(isLoading);
