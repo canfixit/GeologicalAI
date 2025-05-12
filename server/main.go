@@ -1,6 +1,7 @@
 package main
 
 import (
+        "encoding/json"
         "fmt"
         "geosphere/handlers"
         "log"
@@ -16,6 +17,13 @@ func main() {
         r := mux.NewRouter()
 
         // Register API endpoints
+        r.HandleFunc("/api/test", func(w http.ResponseWriter, r *http.Request) {
+                w.Header().Set("Content-Type", "application/json")
+                json.NewEncoder(w).Encode(map[string]string{
+                        "status": "ok",
+                        "message": "Go server is running!",
+                })
+        }).Methods("GET")
         r.HandleFunc("/api/terrain", handlers.GetTerrainData).Methods("GET")
         r.HandleFunc("/api/insights", handlers.GetInsights).Methods("GET")
         r.HandleFunc("/api/insights/analyze", handlers.RunAnalysis).Methods("POST")
