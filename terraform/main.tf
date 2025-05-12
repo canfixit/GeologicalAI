@@ -60,45 +60,8 @@ resource "aws_security_group" "app_sg" {
   description = "Security group for ${var.project_name} application"
   vpc_id      = aws_vpc.app_vpc.id
 
-  # Allow HTTP
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Allow HTTPS
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Allow application port
-  ingress {
-    from_port   = 5000
-    to_port     = 5000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Allow Go server port
-  ingress {
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Allow SSH
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # No inbound rules - AWS Console will be used for SSH via Session Manager
+  # This configuration doesn't allow direct IP access to any port
 
   # Allow all outbound traffic
   egress {
@@ -113,6 +76,39 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
+# IAM role for SSM access
+resource "aws_iam_role" "ssm_role" {
+  name = "${var.project_name}-ssm-role"
+  
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+# Attach SSM policy to role
+resource "aws_iam_role_policy_attachment" "ssm_policy" {
+  role       = aws_iam_role.ssm_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# Create instance profile
+resource "aws_iam_instance_profile" "ssm_instance_profile" {
+  name = "${var.project_name}-ssm-instance-profile"
+  role = aws_iam_role.ssm_role.name
+}
+
 # EC2 instance
 resource "aws_instance" "app_instance" {
   ami                    = var.ec2_ami
@@ -120,6 +116,7 @@ resource "aws_instance" "app_instance" {
   key_name               = var.ec2_key_name
   vpc_security_group_ids = [aws_security_group.app_sg.id]
   subnet_id              = aws_subnet.public_subnet.id
+  iam_instance_profile   = aws_iam_instance_profile.ssm_instance_profile.name
 
   root_block_device {
     volume_size = 20
@@ -134,6 +131,14 @@ resource "aws_instance" "app_instance" {
 
               # Install necessary dependencies
               apt-get install -y curl git nginx
+
+              # Install AWS SSM Agent
+              mkdir -p /tmp/ssm
+              cd /tmp/ssm
+              wget https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/debian_amd64/amazon-ssm-agent.deb
+              dpkg -i amazon-ssm-agent.deb
+              systemctl enable amazon-ssm-agent
+              systemctl start amazon-ssm-agent
 
               # Install Node.js
               curl -sL https://deb.nodesource.com/setup_20.x | bash -

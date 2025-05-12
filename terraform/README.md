@@ -81,9 +81,23 @@ The deployment includes:
 
 ## Security Considerations
 
-- The security group allows SSH access from any IP (0.0.0.0/0). For production, restrict this to your specific IP address.
+- The security group has no open inbound ports, enhancing security.
+- The EC2 instance uses AWS Systems Manager (SSM) for console access without requiring open SSH ports.
 - Consider using AWS Certificate Manager and HTTPS for production deployments.
 - Store sensitive data (like API keys) in AWS Secrets Manager or as environment variables, not in the application code.
+
+## Accessing the Instance
+
+Since there are no inbound rules in the security group, you'll need to access the instance through the AWS Console using Systems Manager Session Manager:
+
+1. Log in to the AWS Console
+2. Navigate to EC2 > Instances
+3. Select your instance
+4. Click on "Connect"
+5. Choose the "Session Manager" tab
+6. Click "Connect"
+
+This will open a browser-based shell to your instance without requiring SSH access through port 22.
 
 ## Troubleshooting
 
