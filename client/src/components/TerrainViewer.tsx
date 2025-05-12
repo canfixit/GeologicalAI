@@ -6,7 +6,10 @@ import {
   Environment, 
   Stats,
   Html,
-  Text
+  Text,
+  Grid,
+  GizmoHelper,
+  GizmoViewport
 } from '@react-three/drei';
 import * as THREE from 'three';
 import { useTerrainStore } from '@/lib/stores/useTerrainStore';
