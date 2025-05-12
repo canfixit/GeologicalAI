@@ -104,33 +104,30 @@ function TerrainScene() {
   
   // Get visualization properties based on the current view mode and store settings
   const getVisualizationProps = () => {
-    // Convert possibly null colorByProperty to undefined for component props
-    const colorProperty = colorByProperty || undefined;
-    
     switch (viewMode.type) {
       case 'xray':
         return {
           wireframe: true,
           opacity: 0.6,
-          colorByProperty: colorProperty
+          colorByProperty: colorByProperty || undefined
         };
       case 'composition':
         return {
           materialScale: 1.5,
           colorEmphasis: true,
-          colorByProperty: colorProperty || 'composition',
+          colorByProperty: colorByProperty || 'composition',
           wireframe: wireframeMode
         };
       case 'density':
         return {
           heightScale: 1.2,
-          colorByProperty: colorProperty || 'density',
+          colorByProperty: colorByProperty || 'density',
           wireframe: wireframeMode
         };
       default:
         return {
           wireframe: wireframeMode,
-          colorByProperty: colorProperty
+          colorByProperty: colorByProperty || undefined
         };
     }
   };
@@ -279,7 +276,7 @@ export default function TerrainViewer() {
   
   useEffect(() => {
     if (data) {
-      // Type check before setting terrain data
+      // Type check and cast to TerrainData
       if (
         typeof data === 'object' && 
         data !== null && 
@@ -289,7 +286,20 @@ export default function TerrainViewer() {
         'layers' in data &&
         'drillPoints' in data
       ) {
-        setTerrainData(data);
+        // Type assertion to ensure it matches TerrainData interface
+        const typedData = {
+          id: String(data.id),
+          name: String(data.name),
+          dimensions: {
+            width: Number((data.dimensions as any).width) || 0,
+            height: Number((data.dimensions as any).height) || 0,
+            depth: Number((data.dimensions as any).depth) || 0
+          },
+          layers: Array.isArray(data.layers) ? data.layers : [],
+          drillPoints: Array.isArray(data.drillPoints) ? data.drillPoints : []
+        };
+        
+        setTerrainData(typedData as any);
       } else {
         console.error('Invalid terrain data format received:', data);
         setError('Invalid terrain data format received');

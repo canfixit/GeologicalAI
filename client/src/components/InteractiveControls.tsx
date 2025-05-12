@@ -126,7 +126,7 @@ export default function InteractiveControls() {
   if (!terrainData) return null;
   
   return (
-    <div className={`fixed bottom-5 right-5 z-10 transition-all duration-300 ${!showControls && expanded ? 'opacity-30 hover:opacity-100' : 'opacity-100'}`}>
+    <div className={`fixed bottom-5 right-5 z-10 transition-all duration-300 ${expanded ? 'opacity-100' : 'opacity-100'}`}>
       {expanded ? (
         <div className="bg-background/90 backdrop-blur-sm p-4 rounded-lg shadow-lg border border-border w-72">
           <div className="flex justify-between items-center mb-3">
@@ -183,10 +183,10 @@ export default function InteractiveControls() {
               
               <div className="flex items-center justify-between mt-2">
                 <span className="text-sm">Vertical Exaggeration</span>
-                <span className="text-xs text-muted-foreground">{exaggeration}x</span>
+                <span className="text-xs text-muted-foreground">{verticalExaggeration.toFixed(1)}x</span>
               </div>
               <Slider 
-                value={[exaggeration]} 
+                value={[verticalExaggeration]} 
                 min={1} 
                 max={5} 
                 step={0.1} 
@@ -233,14 +233,41 @@ export default function InteractiveControls() {
                   <Label htmlFor="showAxes">Show Coordinate Axes</Label>
                 </div>
                 
+                <div className="flex items-center space-x-2 mt-1">
+                  <Switch 
+                    id="wireframeMode" 
+                    checked={wireframeMode} 
+                    onCheckedChange={setWireframeMode} 
+                  />
+                  <Label htmlFor="wireframeMode">Wireframe Mode</Label>
+                </div>
+                
+                <div className="flex flex-col space-y-1 mt-2">
+                  <Label htmlFor="colorByProperty">Color By Property</Label>
+                  <Select 
+                    value={colorByProperty || ''} 
+                    onValueChange={(value) => setColorByProperty(value || null)}
+                  >
+                    <SelectTrigger id="colorByProperty">
+                      <SelectValue placeholder="None (use layer colors)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None (use layer colors)</SelectItem>
+                      <SelectItem value="density">Density</SelectItem>
+                      <SelectItem value="porosity">Porosity</SelectItem>
+                      <SelectItem value="permeability">Permeability</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 <div className="mt-3">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     className="w-full"
-                    onClick={resetView}
+                    onClick={handleResetAll}
                   >
-                    <RotateCcw size={14} className="mr-2" /> Reset Camera
+                    <RotateCcw size={14} className="mr-2" /> Reset All Settings
                   </Button>
                 </div>
               </div>
