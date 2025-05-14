@@ -10,25 +10,8 @@ variable "project_name" {
   default     = "reactthreegoai"
 }
 
-variable "ec2_ami" {
-  description = "The AMI ID for the EC2 instance (Ubuntu 22.04 LTS)"
+variable "environment" {
+  description = "The environment (dev, test, prod)"
   type        = string
-  default     = "ami-0c7217cdde317cfec" # Ubuntu 22.04 LTS in us-east-1
-}
-
-variable "ec2_instance_type" {
-  description = "The EC2 instance type"
-  type        = string
-  default     = "t2.medium" # Recommended for running both Node.js and Go
-}
-
-variable "ec2_key_name" {
-  description = "The key pair name for SSH access to the EC2 instance"
-  type        = string
-}
-
-variable "git_repo_url" {
-  description = "The URL of the Git repository to clone"
-  type        = string
-  default     = "https://github.com/yourusername/reactthreegoai.git"
+  default     = "dev"
 }

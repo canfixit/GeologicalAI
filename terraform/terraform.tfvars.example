@@ -3,4 +3,4 @@ project_name     = "reactthreegoai"
 ec2_ami          = "ami-0c7217cdde317cfec"  # Ubuntu 22.04 LTS in us-east-1
 ec2_instance_type = "t2.medium"
 ec2_key_name     = "your-key-name"          # Replace with your EC2 key pair name
-git_repo_url     = "https://github.com/yourusername/reactthreegoai.git"  # Replace with your repo URL
+git_repo_url     = "https://github.com/canfixit/GeologicalAI.git"  # Replace with your repo URL
