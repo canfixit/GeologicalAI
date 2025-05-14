@@ -13,5 +13,11 @@ variable "project_name" {
 variable "environment" {
   description = "The environment (dev, test, prod)"
   type        = string
-  default     = "dev"
+  default     = "prod"
+}
+
+variable "domain_name" {
+  description = "The domain name for the application (managed by Cloudflare)"
+  type        = string
+  default     = "reactthreegoai.canfixit.com.au"
 }

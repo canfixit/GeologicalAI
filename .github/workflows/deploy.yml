@@ -1,0 +1,113 @@
+name: Deploy ReactThreeGoAI
+
+on:
+  push:
+    branches:
+      - main  # Change this to your default branch if different
+  workflow_dispatch:  # Allow manual triggering from GitHub UI
+
+env:
+  AWS_REGION: us-east-1  # Change to match your configured region
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform-deploy:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    outputs:
+      s3_bucket_name: ${{ steps.terraform-outputs.outputs.s3_bucket_name }}
+      api_gateway_url: ${{ steps.terraform-outputs.outputs.api_gateway_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.5.0"  # Specify your required version
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Prepare Lambda functions
+        working-directory: terraform
+        run: |
+          chmod +x build_lambdas.sh
+          ./build_lambdas.sh
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
+
+      - name: Extract Terraform Outputs
+        id: terraform-outputs
+        working-directory: terraform
+        run: |
+          echo "s3_bucket_name=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
+          echo "api_gateway_url=$(terraform output -raw api_gateway_url)" >> $GITHUB_OUTPUT
+
+  build-and-deploy-frontend:
+    name: Build and Deploy Frontend
+    needs: terraform-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: client
+        run: npm run build
+        env:
+          # Set the API URL for production
+          VITE_API_BASE_URL: ${{ needs.terraform-deploy.outputs.api_gateway_url }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to S3
+        working-directory: client
+        run: |
+          echo "Deploying to S3 bucket: ${{ needs.terraform-deploy.outputs.s3_bucket_name }}"
+          aws s3 sync dist/ s3://${{ needs.terraform-deploy.outputs.s3_bucket_name }}/ --delete
+
+      - name: Invalidate Cloudflare cache (if needed)
+        # Only needed if you want to invalidate Cloudflare cache after deploy
+        # You'll need to set up the Cloudflare API token as a GitHub secret
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ZONE_ID != '' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          echo "Purging Cloudflare cache for zone $CLOUDFLARE_ZONE_ID"
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/$CLOUDFLARE_ZONE_ID/purge_cache" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}'

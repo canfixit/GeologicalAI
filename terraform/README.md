@@ -1,13 +1,22 @@
-# Terraform Configuration for ReactThreeGoAI Project
+# Terraform Configuration for ReactThreeGoAI Project - Serverless Architecture with Cloudflare
 
-This directory contains Terraform configurations to deploy the ReactThreeGoAI application to AWS EC2.
+This directory contains Terraform configurations to deploy the ReactThreeGoAI application using a serverless architecture on AWS, with Cloudflare handling DNS and SSL/TLS.
+
+## Architecture Overview
+
+This deployment uses a fully serverless approach:
+
+- **Frontend**: Static website hosted on S3 directly (no CloudFront)
+- **Backend**: API Gateway + Lambda functions
+- **DNS & CDN**: Cloudflare for DNS, SSL/TLS, and CDN functionality
+- **Cost Efficiency**: Pay only for what you use, no idle servers
 
 ## Prerequisites
 
 - [Terraform](https://www.terraform.io/downloads.html) installed (version >= 1.0.0)
 - AWS credentials configured (Access Key and Secret Access Key)
-- An EC2 key pair for SSH access
-- Git repository with your application code
+- Node.js and npm for packaging Lambda functions
+- Cloudflare account with the domain already added and configured
 
 ## Configuration
 
@@ -20,23 +29,57 @@ cp terraform.tfvars.example terraform.tfvars
 2. Edit `terraform.tfvars` to customize your deployment:
 
 ```
-aws_region       = "us-east-1"              # AWS region for deployment
-project_name     = "reactthreegoai"         # Name used for resource naming
-ec2_ami          = "ami-0c7217cdde317cfec"  # Ubuntu 22.04 LTS AMI (us-east-1)
-ec2_instance_type = "t2.medium"             # Instance type
-ec2_key_name     = "your-key-name"          # Replace with your EC2 key pair name
-git_repo_url     = "https://github.com/yourusername/reactthreegoai.git"  # Replace with your repo URL
+aws_region   = "us-east-1"                    # AWS region for deployment
+project_name = "reactthreegoai"               # Name used for resource naming
+environment  = "prod"                         # Environment (dev, test, prod)
+domain_name  = "reactthreegoai.canfixit.com.au"  # Domain managed by Cloudflare
 ```
 
-## State Management (Optional)
+### Domain Name Configuration
 
-For team environments, it's recommended to use remote state storage. Uncomment and configure the S3 backend in `backend.tf` if needed.
+The infrastructure is configured to work with Cloudflare managing the domain `reactthreegoai.canfixit.com.au`. After deployment:
 
-## Deployment
+1. You'll create CNAME records in Cloudflare pointing to:
+   - The S3 website endpoint for the main domain
+   - The API Gateway endpoint for the API subdomain
+
+2. Cloudflare will handle:
+   - DNS routing
+   - SSL/TLS certificates
+   - CDN caching
+   - DDoS protection
+
+## Preparing Lambda Functions
+
+Before deploying, you need to package the Lambda functions:
+
+```bash
+cd terraform
+chmod +x build_lambdas.sh
+./build_lambdas.sh
+```
+
+This will create the necessary zip files for Lambda deployment.
+
+## Frontend Deployment
+
+After Terraform creates the S3 bucket, you'll need to build and upload your frontend:
+
+```bash
+# Build your React application
+cd ../client
+npm run build
+
+# Upload to S3 (replace BUCKET_NAME with the output from Terraform)
+aws s3 sync ./build/ s3://BUCKET_NAME/ --delete
+```
+
+## Deployment Steps
 
 1. Initialize Terraform:
 
 ```bash
+cd terraform
 terraform init
 ```
 
@@ -52,13 +95,37 @@ terraform plan
 terraform apply
 ```
 
-4. After successful deployment, the public IP address will be displayed in the output:
+4. After successful deployment, the S3 website endpoint and API Gateway URL will be displayed in the output:
 
 ```
-public_ip = "xx.xx.xx.xx"
+s3_website_endpoint = "reactthreegoai-frontend-xxxx.s3-website-us-east-1.amazonaws.com"
+s3_website_url = "http://reactthreegoai-frontend-xxxx.s3-website-us-east-1.amazonaws.com"
+api_gateway_url = "https://xxxxxxxx.execute-api.us-east-1.amazonaws.com/prod"
 ```
 
-You can access your application at: `http://xx.xx.xx.xx`
+The output will also include detailed instructions for configuring your Cloudflare DNS settings:
+
+```
+cloudflare_setup_instructions = 
+  === Cloudflare DNS Setup Instructions ===
+  
+  1. For the main domain (reactthreegoai.canfixit.com.au):
+     - Type: CNAME
+     - Name: reactthreegoai.canfixit.com.au
+     - Target: reactthreegoai-frontend-xxxx.s3-website-us-east-1.amazonaws.com
+     - Proxy status: Proxied (enabled)
+  
+  2. For the API subdomain (api.reactthreegoai.canfixit.com.au):
+     - Type: CNAME
+     - Name: api
+     - Target: xxxxxxxx.execute-api.us-east-1.amazonaws.com
+     - Proxy status: Proxied (enabled)
+  
+  3. Configure Cloudflare SSL/TLS:
+     - SSL/TLS mode: Full or Flexible
+     - Always Use HTTPS: On
+     - Automatic HTTPS Rewrites: On
+```
 
 ## Cleaning Up
 
@@ -68,36 +135,36 @@ To destroy all resources created by Terraform:
 terraform destroy
 ```
 
-## Architecture
+## Serverless Architecture Benefits
 
-The deployment includes:
-
-- A VPC with public subnet
-- Security group allowing traffic on ports 22 (SSH), 80 (HTTP), 443 (HTTPS), 5000 (Node.js app), and 8080 (Go server)
-- An EC2 instance with Ubuntu 22.04 LTS
-- Elastic IP address for stable public access
-- Automatic setup of Node.js, Go, and Nginx
-- Systemd services for both the Node.js and Go applications
+- **Cost-Efficient**: Pay only for the actual requests processed
+- **Auto-Scaling**: Handles traffic spikes without manual intervention
+- **Low Maintenance**: No servers to manage or patch
+- **High Availability**: Built-in redundancy across availability zones
 
 ## Security Considerations
 
-- The security group has no open inbound ports, enhancing security.
-- The EC2 instance uses AWS Systems Manager (SSM) for console access without requiring open SSH ports.
-- Consider using AWS Certificate Manager and HTTPS for production deployments.
-- Store sensitive data (like API keys) in AWS Secrets Manager or as environment variables, not in the application code.
+- S3 bucket is configured for website hosting with appropriate permissions
+- CloudFront provides HTTPS by default
+- API Gateway includes CORS configuration
+- Lambda functions have minimal IAM permissions
+- CloudWatch logs are enabled for all components
 
-## Accessing the Instance
+## Monitoring and Logs
 
-Since there are no inbound rules in the security group, you'll need to access the instance through the AWS Console using Systems Manager Session Manager:
+- Lambda function logs are available in CloudWatch Logs
+- API Gateway access logs are stored in CloudWatch Logs
+- CloudFront access logs can be enabled for the distribution
 
-1. Log in to the AWS Console
-2. Navigate to EC2 > Instances
-3. Select your instance
-4. Click on "Connect"
-5. Choose the "Session Manager" tab
-6. Click "Connect"
+## Next Steps for Production
 
-This will open a browser-based shell to your instance without requiring SSH access through port 22.
+For a production environment, consider:
+
+1. Adding a custom domain with AWS Certificate Manager
+2. Implementing a CI/CD pipeline for automated deployment
+3. Setting up DynamoDB for persistent storage
+4. Adding authentication with Amazon Cognito
+5. Implementing caching strategies for API responses
 
 ## Troubleshooting
 

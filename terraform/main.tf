@@ -3,13 +3,14 @@ provider "aws" {
 }
 
 #------------------------------------------------------------------------------
-# S3 Bucket for Frontend Static Website Hosting
+# S3 Bucket for Frontend Static Website Hosting (for Cloudflare)
 #------------------------------------------------------------------------------
 resource "aws_s3_bucket" "frontend" {
   bucket = "${var.project_name}-frontend-${random_id.suffix.hex}"
 
   tags = {
-    Name = "${var.project_name}-frontend"
+    Name        = "${var.project_name}-frontend"
+    Environment = var.environment
   }
 }
 
@@ -69,63 +70,16 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
   }
 }
 
-#------------------------------------------------------------------------------
-# CloudFront Distribution for Frontend
-#------------------------------------------------------------------------------
-resource "aws_cloudfront_distribution" "frontend" {
-  origin {
-    domain_name = aws_s3_bucket_website_configuration.frontend.website_endpoint
-    origin_id   = "S3-${aws_s3_bucket.frontend.bucket}"
+# CORS configuration for S3 bucket
+resource "aws_s3_bucket_cors_configuration" "frontend" {
+  bucket = aws_s3_bucket.frontend.id
 
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "http-only"  # S3 website endpoints don't support HTTPS
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
-  }
-
-  enabled             = true
-  is_ipv6_enabled     = true
-  default_root_object = "index.html"
-  price_class         = "PriceClass_100"  # US and Europe only - cheapest option
-
-  default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${aws_s3_bucket.frontend.bucket}"
-
-    forwarded_values {
-      query_string = false
-      cookies {
-        forward = "none"
-      }
-    }
-
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 3600
-    max_ttl                = 86400
-  }
-
-  custom_error_response {
-    error_code         = 404
-    response_code      = 200
-    response_page_path = "/index.html"
-  }
-
-  restrictions {
-    geo_restriction {
-      restriction_type = "none"
-    }
-  }
-
-  viewer_certificate {
-    cloudfront_default_certificate = true
-  }
-
-  tags = {
-    Name = "${var.project_name}-cloudfront"
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "HEAD"]
+    allowed_origins = ["https://${var.domain_name}", "http://${var.domain_name}"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
   }
 }
 
@@ -253,7 +207,7 @@ resource "aws_apigatewayv2_api" "api" {
   name          = "${var.project_name}-api"
   protocol_type = "HTTP"
   cors_configuration {
-    allow_origins = ["*"]
+    allow_origins = ["https://${var.domain_name}", "http://${var.domain_name}"]
     allow_methods = ["GET", "POST", "OPTIONS"]
     allow_headers = ["Content-Type", "Authorization"]
     max_age       = 300
@@ -278,6 +232,11 @@ resource "aws_apigatewayv2_stage" "api" {
       responseLength = "$context.responseLength"
       integrationError = "$context.integrationErrorMessage"
     })
+  }
+
+  default_route_settings {
+    throttling_burst_limit = 100
+    throttling_rate_limit  = 50
   }
 }
 
@@ -357,14 +316,46 @@ resource "aws_lambda_permission" "analysis" {
 #------------------------------------------------------------------------------
 # Outputs
 #------------------------------------------------------------------------------
-output "frontend_website_url" {
-  value = "https://${aws_cloudfront_distribution.frontend.domain_name}"
-}
-
-output "api_endpoint" {
-  value = aws_apigatewayv2_stage.api.invoke_url
+output "s3_website_endpoint" {
+  description = "S3 website endpoint for Cloudflare CNAME"
+  value       = aws_s3_bucket_website_configuration.frontend.website_endpoint
 }
 
 output "s3_bucket_name" {
-  value = aws_s3_bucket.frontend.bucket
+  description = "S3 bucket name for frontend uploads"
+  value       = aws_s3_bucket.frontend.bucket
+}
+
+output "s3_website_url" {
+  description = "S3 website URL (for testing before Cloudflare setup)"
+  value       = "http://${aws_s3_bucket_website_configuration.frontend.website_endpoint}"
+}
+
+output "api_gateway_url" {
+  description = "API Gateway URL for Cloudflare CNAME"
+  value       = aws_apigatewayv2_stage.api.invoke_url
+}
+
+output "cloudflare_setup_instructions" {
+  description = "Instructions for Cloudflare setup"
+  value       = <<-EOT
+    === Cloudflare DNS Setup Instructions ===
+    
+    1. For the main domain (${var.domain_name}):
+       - Type: CNAME
+       - Name: ${var.domain_name}
+       - Target: ${aws_s3_bucket_website_configuration.frontend.website_endpoint}
+       - Proxy status: Proxied (enabled)
+    
+    2. For the API subdomain (api.${var.domain_name}):
+       - Type: CNAME
+       - Name: api
+       - Target: ${replace(aws_apigatewayv2_stage.api.invoke_url, "https://", "")}
+       - Proxy status: Proxied (enabled)
+    
+    3. Configure Cloudflare SSL/TLS:
+       - SSL/TLS mode: Full or Flexible
+       - Always Use HTTPS: On
+       - Automatic HTTPS Rewrites: On
+  EOT
 }

@@ -1,6 +1,4 @@
-aws_region       = "us-east-1"
-project_name     = "reactthreegoai"
-ec2_ami          = "ami-0c7217cdde317cfec"  # Ubuntu 22.04 LTS in us-east-1
-ec2_instance_type = "t2.medium"
-ec2_key_name     = "your-key-name"          # Replace with your EC2 key pair name
-git_repo_url     = "https://github.com/canfixit/GeologicalAI.git"  # Replace with your repo URL
+aws_region   = "us-east-1"     # AWS region for deployment
+project_name = "reactthreegoai"  # Name used for resource naming
+environment  = "prod"           # Environment (dev, test, prod)
+domain_name  = "reactthreegoai.canfixit.com.au"  # Domain managed by Cloudflare

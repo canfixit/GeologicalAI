@@ -17,7 +17,7 @@ A geological visualization platform for AI-powered terrain analysis, enabling re
 - **Backend**: Go API with Node.js proxy
 - **State Management**: Zustand for reactive state
 - **Styling**: Tailwind CSS with custom UI components
-- **Deployment**: AWS EC2 (via Terraform)
+- **Deployment**: AWS Serverless (S3, Lambda, API Gateway via Terraform)
 
 ## Getting Started
 
