@@ -29,15 +29,15 @@ cp terraform.tfvars.example terraform.tfvars
 2. Edit `terraform.tfvars` to customize your deployment:
 
 ```
-aws_region   = "us-east-1"                    # AWS region for deployment
-project_name = "reactthreegoai"               # Name used for resource naming
-environment  = "prod"                         # Environment (dev, test, prod)
-domain_name  = "reactthreegoai.canfixit.com.au"  # Domain managed by Cloudflare
+aws_region   = "us-east-1"                  # AWS region for deployment
+project_name = "react3goai"                 # Name used for resource naming
+environment  = "prod"                       # Environment (dev, test, prod)
+domain_name  = "react3goai.canfixit.com.au"  # Domain managed by Cloudflare
 ```
 
 ### Domain Name Configuration
 
-The infrastructure is configured to work with Cloudflare managing the domain `reactthreegoai.canfixit.com.au`. After deployment:
+The infrastructure is configured to work with Cloudflare managing the domain `react3goai.canfixit.com.au`. After deployment:
 
 1. You'll create CNAME records in Cloudflare pointing to:
    - The S3 website endpoint for the main domain
@@ -98,8 +98,8 @@ terraform apply
 4. After successful deployment, the S3 website endpoint and API Gateway URL will be displayed in the output:
 
 ```
-s3_website_endpoint = "reactthreegoai-frontend-xxxx.s3-website-us-east-1.amazonaws.com"
-s3_website_url = "http://reactthreegoai-frontend-xxxx.s3-website-us-east-1.amazonaws.com"
+s3_website_endpoint = "react3goai-frontend-xxxx.s3-website-us-east-1.amazonaws.com"
+s3_website_url = "http://react3goai-frontend-xxxx.s3-website-us-east-1.amazonaws.com"
 api_gateway_url = "https://xxxxxxxx.execute-api.us-east-1.amazonaws.com/prod"
 ```
 
@@ -109,13 +109,13 @@ The output will also include detailed instructions for configuring your Cloudfla
 cloudflare_setup_instructions = 
   === Cloudflare DNS Setup Instructions ===
   
-  1. For the main domain (reactthreegoai.canfixit.com.au):
+  1. For the main domain (react3goai.canfixit.com.au):
      - Type: CNAME
-     - Name: reactthreegoai.canfixit.com.au
-     - Target: reactthreegoai-frontend-xxxx.s3-website-us-east-1.amazonaws.com
+     - Name: react3goai.canfixit.com.au
+     - Target: react3goai-frontend-xxxx.s3-website-us-east-1.amazonaws.com
      - Proxy status: Proxied (enabled)
   
-  2. For the API subdomain (api.reactthreegoai.canfixit.com.au):
+  2. For the API subdomain (api.react3goai.canfixit.com.au):
      - Type: CNAME
      - Name: api
      - Target: xxxxxxxx.execute-api.us-east-1.amazonaws.com

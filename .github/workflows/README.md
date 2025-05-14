@@ -1,4 +1,4 @@
-# CI/CD Setup Guide for ReactThreeGoAI
+# CI/CD Setup Guide for React3GoAI
 
 This guide will help you set up the necessary AWS and GitHub configuration for automatic deployments.
 
@@ -61,8 +61,8 @@ Create a file named `permissions-policy.json`:
         "s3:PutObjectAcl"
       ],
       "Resource": [
-        "arn:aws:s3:::reactthreegoai-frontend-*",
-        "arn:aws:s3:::reactthreegoai-frontend-*/*"
+        "arn:aws:s3:::react3goai-frontend-*",
+        "arn:aws:s3:::react3goai-frontend-*/*"
       ]
     },
     {
@@ -97,17 +97,17 @@ Create the IAM role:
 
 ```bash
 aws iam create-role \
-  --role-name GithubActionsReactThreeGoAI \
+  --role-name GithubActionsReact3GoAI \
   --assume-role-policy-document file://trust-policy.json
 
 aws iam put-role-policy \
-  --role-name GithubActionsReactThreeGoAI \
+  --role-name GithubActionsReact3GoAI \
   --policy-name DeploymentPermissions \
   --policy-document file://permissions-policy.json
 ```
 
 Save the ARN of the role, it will look like:
-`arn:aws:iam::<YOUR_AWS_ACCOUNT_ID>:role/GithubActionsReactThreeGoAI`
+`arn:aws:iam::<YOUR_AWS_ACCOUNT_ID>:role/GithubActionsReact3GoAI`
 
 ## GitHub Repository Secrets
 
