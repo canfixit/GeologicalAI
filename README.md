@@ -1,4 +1,4 @@
-# ReactThreeGoAI
+# React3GoAI
 
 A geological visualization platform for AI-powered terrain analysis, enabling researchers and analysts to explore complex geological data through interactive 3D visualizations and advanced control mechanisms.
 
@@ -31,8 +31,8 @@ A geological visualization platform for AI-powered terrain analysis, enabling re
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-org/reactthreegoai.git
-cd reactthreegoai
+git clone https://github.com/your-org/react3goai.git
+cd react3goai
 ```
 
 2. Install dependencies:

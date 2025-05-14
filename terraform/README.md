@@ -1,6 +1,6 @@
-# Terraform Configuration for ReactThreeGoAI Project - Serverless Architecture with Cloudflare
+# Terraform Configuration for React3GoAI Project - Serverless Architecture with Cloudflare
 
-This directory contains Terraform configurations to deploy the ReactThreeGoAI application using a serverless architecture on AWS, with Cloudflare handling DNS and SSL/TLS.
+This directory contains Terraform configurations to deploy the React3GoAI application using a serverless architecture on AWS, with Cloudflare handling DNS and SSL/TLS.
 
 ## Architecture Overview
 

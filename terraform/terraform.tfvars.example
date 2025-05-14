@@ -1,4 +1,4 @@
 aws_region   = "us-east-1"     # AWS region for deployment
-project_name = "reactthreegoai"  # Name used for resource naming
-environment  = "prod"           # Environment (dev, test, prod)
-domain_name  = "reactthreegoai.canfixit.com.au"  # Domain managed by Cloudflare
+project_name = "react3goai"    # Name used for resource naming
+environment  = "prod"          # Environment (dev, test, prod)
+domain_name  = "react3goai.canfixit.com.au"  # Domain managed by Cloudflare
