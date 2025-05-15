@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "The name of the project, used for resource naming"
   type        = string
-  default     = "react3goai"
+  default     = "react3"
 }
 
 variable "environment" {
